@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="f39222a4-c9d6-4f51-8a0e-10b8b9dc1e4e" Version="0.5" Language="en-US" Publisher="Intel" />
+    <DisplayName>Local History for Visual Studio</DisplayName>
+    <Description xml:space="preserve">Local History for Visual Studio automatically creates a copy everytime you save a file. The local history is stored in the .localhistory directory in the solution and can be viewed by right clicking the file in the Solution Explorer.
+</Description>
+    <License>http://www.apache.org/licenses/LICENSE-2.0.html</License>
+    <Tags>Source Control</Tags>
+  </Metadata>
+  <Installation InstalledByMsi="false">
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="11.0" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="4.5" />
+    <Dependency Id="Microsoft.VisualStudio.MPF.11.0" DisplayName="Visual Studio MPF 11.0" d:Source="Installed" Version="11.0" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" repositoryPath="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+  </Assets>
+</PackageManifest>
