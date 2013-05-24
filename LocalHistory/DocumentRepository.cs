@@ -92,7 +92,7 @@ namespace Intel.LocalHistory
       if (filePath == null) throw new ArgumentNullException("filePath");
       if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
-      string unixTime = ToUnixTime(dateTime).ToString();
+      string unixTime = ToUnixTime(dateTime).ToString(CultureInfo.CurrentCulture);
       string fileName = Path.GetFileName(filePath);
       string relativePath = filePath.Replace(SolutionDirectory + "\\", "");
       string dirPath = Path.GetDirectoryName(relativePath);

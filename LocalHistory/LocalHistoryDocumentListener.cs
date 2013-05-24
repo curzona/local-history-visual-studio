@@ -24,8 +24,8 @@ namespace Intel.LocalHistory
 {
   class LocalHistoryDocumentListener : IVsRunningDocTableEvents3
   {
-    private IVsRunningDocumentTable documentTable;
-    private DocumentRepository documentRepository;
+    private readonly IVsRunningDocumentTable documentTable;
+    private readonly DocumentRepository documentRepository;
 
     public LocalHistoryDocumentListener(IVsRunningDocumentTable documentTable, DocumentRepository documentRepository)
     {

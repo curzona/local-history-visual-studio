@@ -52,8 +52,8 @@ namespace Intel.LocalHistory
   public sealed class LocalHistoryPackage : Package, IVsSolutionEvents
   {
     private EnvDTE.DTE dte;
-    private uint solutionCookie = 0;
-    private uint rdtCookie = 0;
+    private uint solutionCookie;
+    private uint rdtCookie;
     private DocumentRepository documentRepository;
     private LocalHistoryDocumentListener documentListener;
 
@@ -103,7 +103,7 @@ namespace Intel.LocalHistory
     /// </summary>
     private void MenuItemCallback(object sender, EventArgs e)
     {
-      string projectItem = dte.SelectedItems.Item(1).ProjectItem.get_FileNames(0);
+      string projectItem = dte.SelectedItems.Item(1).ProjectItem.FileNames[0];
 
       List<DocumentNode> revisions = documentRepository.GetRevisions(projectItem);
 

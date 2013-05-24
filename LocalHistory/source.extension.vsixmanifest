@@ -5,7 +5,7 @@
     <DisplayName>Local History for Visual Studio</DisplayName>
     <Description xml:space="preserve">Local History for Visual Studio automatically creates a copy everytime you save a file. The local history is stored in the .localhistory directory in the solution and can be viewed by right clicking the file in the Solution Explorer.
 </Description>
-    <License>http://www.apache.org/licenses/LICENSE-2.0.html</License>
+    <License>License.txt</License>
     <Tags>Source Control</Tags>
   </Metadata>
   <Installation InstalledByMsi="false">
