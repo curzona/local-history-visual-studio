@@ -66,11 +66,11 @@ namespace Intel.LocalHistory
       // Open a comparison between the old file and the current file
       differenceFrame = DifferenceService.OpenComparisonWindow2(
         node.RepositoryPath, LatestDocument.RepositoryPath,
-        node.FileName + node.TimeStamp + " vs  Now",
-        node.FileName + node.TimeStamp + " vs  Now",
+        node.FileName + " " + node.TimeStamp + " vs  Now",
+        node.FileName + " " + node.TimeStamp + " vs  Now",
         node.FileName + " " + node.TimeStamp,
         LatestDocument.FileName + " Now",
-        node.FileName + node.TimeStamp + " vs  Now",
+        node.FileName + " " + node.TimeStamp + " vs  Now",
         null,
         0);
     }
