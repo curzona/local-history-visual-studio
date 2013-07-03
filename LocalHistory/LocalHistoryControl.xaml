@@ -3,8 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    Background="{DynamicResource VsBrush.Window}"
-    Foreground="{DynamicResource VsBrush.WindowText}"
+    xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.11.0"
     mc:Ignorable="d"
     d:DesignHeight="300" d:DesignWidth="300"
     Name="LocalHistoryToolWindow">
@@ -29,7 +28,7 @@
                 </MultiTrigger.Conditions>
                 <MultiTrigger.Setters>
                   <Setter TargetName="Panel" Property="Background"
-                    Value="{DynamicResource VsBrush.FileTabSelectedBackground}"/>
+                    Value="{DynamicResource {x:Static vsui:TreeViewColors.SelectedItemActiveBrushKey}}"/>
                 </MultiTrigger.Setters>
               </MultiTrigger>
               <MultiTrigger>
@@ -39,7 +38,7 @@
                 </MultiTrigger.Conditions>
                 <MultiTrigger.Setters>
                   <Setter TargetName="Panel" Property="Background"
-                    Value="{DynamicResource VsBrush.FileTabInactiveGradient}"/>
+                    Value="{DynamicResource {x:Static vsui:TreeViewColors.SelectedItemInactiveBrushKey}}"/>
                 </MultiTrigger.Setters>
               </MultiTrigger>
             </ControlTemplate.Triggers>
@@ -52,9 +51,9 @@
   <Grid>
     <ListBox
           x:Name="DocumentListBox"
-          Background="{DynamicResource VsBrush.ToolWindowBackground}"
-          Foreground="{DynamicResource VsBrush.ToolWindowText}"
-          BorderBrush="{DynamicResource VsBrush.ToolWindowBorder}"
+          Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
+          Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+          BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}"
           ItemsSource="{Binding DocumentItems}">
     </ListBox>
   </Grid>
