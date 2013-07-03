@@ -10,9 +10,6 @@
     Name="LocalHistoryToolWindow">
 
   <UserControl.Resources>
-    <SolidColorBrush x:Key="MyBackgroundBrush" Color="Green" />
-    <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="Cyan" />
-
     <Style x:Key="{x:Type ListBoxItem}" TargetType="ListBoxItem">
       <EventSetter Event="MouseDoubleClick" Handler="MouseDoubleClickHandler" />
       <Setter Property="SnapsToDevicePixels" Value="true"/>
