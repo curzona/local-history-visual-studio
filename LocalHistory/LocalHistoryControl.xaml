@@ -18,8 +18,6 @@
         <Setter.Value>
           <ControlTemplate TargetType="ListBoxItem">
             <StackPanel Name="Panel" Orientation="Horizontal">
-              <Label Content="{Binding FileName}"
-                   Foreground="{DynamicResource VsBrush.WindowText}"></Label>
               <Label Content="{Binding TimeStamp}"
                    Foreground="{DynamicResource VsBrush.WindowText}"></Label>
             </StackPanel>

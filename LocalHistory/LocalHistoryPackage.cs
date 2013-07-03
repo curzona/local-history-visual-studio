@@ -131,8 +131,9 @@ namespace Intel.LocalHistory
       ShowToolWindow(null, null);
 
       LocalHistoryControl control = (LocalHistoryControl)toolWindow.Content;
+      toolWindow.Caption = "Local History - " + Path.GetFileName(projectItem);
 
-      // Remove revision from the revision list that belong to the previous document 
+      // Remove all revisions from the revision list that belong to the previous document 
       control.DocumentItems.Clear();
 
       // Add the project item and its history to the revision list
