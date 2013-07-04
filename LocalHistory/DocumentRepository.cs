@@ -51,7 +51,6 @@ namespace Intel.LocalHistory
       Debug.WriteLine("CreateRevision(" + filePath + ")");
 
       if (filePath == null) throw new ArgumentNullException("filePath");
-      if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
       DocumentNode newNode = null;
 
@@ -94,11 +93,11 @@ namespace Intel.LocalHistory
       Debug.WriteLine("GetRevision(" + filePath + "," + dateTime  + ")");
 
       if (filePath == null) throw new ArgumentNullException("filePath");
-      if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
       string unixTime = ToUnixTime(dateTime).ToString(CultureInfo.CurrentCulture);
       string fileName = Path.GetFileName(filePath);
-      string relativePath = filePath.Replace(SolutionDirectory + "\\", "");
+      string relativePath = filePath.StartsWith(SolutionDirectory) ? filePath.Replace(SolutionDirectory + "\\", "") :
+        Path.Combine(Path.GetPathRoot(filePath).Replace(":\\", ""), filePath.Replace(Path.GetPathRoot(filePath), "")); // If the path is outside the solution directory, we have to mess with the drive letter
       string dirPath = Path.GetDirectoryName(relativePath);
       string newPath = Path.Combine(RepositoryDirectory, dirPath, unixTime + "$" + fileName);
 
@@ -116,9 +115,9 @@ namespace Intel.LocalHistory
       Debug.WriteLine("GetRevisions(" + filePath + ")");
 
       if (filePath == null) throw new ArgumentNullException("filePath");
-      if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
-      string relativePath = filePath.Replace(SolutionDirectory + "\\", "");
+      string relativePath = filePath.StartsWith(SolutionDirectory) ? filePath.Replace(SolutionDirectory + "\\", "") :
+        Path.Combine(Path.GetPathRoot(filePath).Replace(":\\", ""), filePath.Replace(Path.GetPathRoot(filePath), "")); // If the path is outside the solution directory, we have to mess with the drive letter
       string newPath = Path.Combine(RepositoryDirectory, relativePath);
       string dirPath = Path.GetDirectoryName(newPath);
       string fileName = Path.GetFileName(newPath);
@@ -156,13 +155,27 @@ namespace Intel.LocalHistory
       Debug.WriteLine("GetDocumentNode(" + filePath + ")");
 
       if (filePath == null) throw new ArgumentNullException("filePath");
-      if (!filePath.StartsWith(RepositoryDirectory)) throw new ArgumentException("filePath is outside of the current Repository");
 
       string[] parts = Path.GetFileName(filePath).Split('$');
       string fileName = parts[1];
 
       string dirPath = Path.GetDirectoryName(filePath.Replace(RepositoryDirectory + "\\", ""));
       string originalPath = Path.Combine(SolutionDirectory, dirPath, fileName);
+
+      // If the file isn't in the SolutionDirectory, either it was deleted or it exists outside of the SolutionDirectory
+      if (!File.Exists(originalPath) && dirPath[1] == '\\')
+      {
+        string driveLetter = dirPath.Substring(0, 1);
+        string dirPart = dirPath.Substring(1);
+
+        string tempPath = driveLetter + ":" + Path.Combine(dirPart, fileName);
+
+        if(File.Exists(tempPath))
+        {
+          originalPath = tempPath;
+        }
+        // Else, it must have been deleted
+      }
 
       DateTime dateTime = ToDateTime(Convert.ToInt64(parts[0]));
 

@@ -48,11 +48,7 @@ namespace Intel.LocalHistory
       uint pitemid; IntPtr ppunkDocData;
       documentTable.GetDocumentInfo(docCookie, out pgrfRDTFlags, out pdwReadLocks, out pdwEditLocks, out pbstrMkDocument, out ppHier, out pitemid, out ppunkDocData);
 
-      // Only save revisions of file in the current solution directory
-      if (pbstrMkDocument.StartsWith(documentRepository.SolutionDirectory))
-      {
-        documentRepository.CreateRevision(pbstrMkDocument);
-      }
+      documentRepository.CreateRevision(pbstrMkDocument);
 
       return VSConstants.S_OK;
     }
