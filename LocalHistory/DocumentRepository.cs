@@ -48,6 +48,8 @@ namespace Intel.LocalHistory
     /// </summary>
     public DocumentNode CreateRevision(string filePath)
     {
+      Debug.WriteLine("CreateRevision(" + filePath + ")");
+
       if (filePath == null) throw new ArgumentNullException("filePath");
       if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
@@ -89,6 +91,8 @@ namespace Intel.LocalHistory
     /// </summary>
     public DocumentNode GetRevision(string filePath, DateTime dateTime)
     {
+      Debug.WriteLine("GetRevision(" + filePath + "," + dateTime  + ")");
+
       if (filePath == null) throw new ArgumentNullException("filePath");
       if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
@@ -98,8 +102,8 @@ namespace Intel.LocalHistory
       string dirPath = Path.GetDirectoryName(relativePath);
       string newPath = Path.Combine(RepositoryDirectory, dirPath, unixTime + "$" + fileName);
 
-      Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevision() of: {0} relativePath = {1}", this.ToString(), relativePath));
-      Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevision() of: {0} newPath = {1}", this.ToString(), newPath));
+      //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevision() of: {0} relativePath = {1}", this.ToString(), relativePath));
+      //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevision() of: {0} newPath = {1}", this.ToString(), newPath));
 
       return new DocumentNode(newPath, filePath, fileName, dateTime);
     }
@@ -109,6 +113,8 @@ namespace Intel.LocalHistory
     /// </summary>
     public List<DocumentNode> GetRevisions(string filePath)
     {
+      Debug.WriteLine("GetRevisions(" + filePath + ")");
+
       if (filePath == null) throw new ArgumentNullException("filePath");
       if (!filePath.StartsWith(SolutionDirectory)) throw new ArgumentException("filePath is outside of the current Workspace");
 
@@ -117,9 +123,9 @@ namespace Intel.LocalHistory
       string dirPath = Path.GetDirectoryName(newPath);
       string fileName = Path.GetFileName(newPath);
 
-      Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} relativePath = {1}", this.ToString(), relativePath));
-      Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} newPath = {1}", this.ToString(), newPath));
-      Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} dirPath = {1}", this.ToString(), dirPath));
+      //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} relativePath = {1}", this.ToString(), relativePath));
+      //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} newPath = {1}", this.ToString(), newPath));
+      //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} dirPath = {1}", this.ToString(), dirPath));
 
       string[] files = Directory.GetFiles(dirPath);
       List<DocumentNode> copies = new List<DocumentNode>();
@@ -128,13 +134,13 @@ namespace Intel.LocalHistory
       {
         if (file.StartsWith(dirPath) && file.EndsWith(fileName))
         {
-          Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} found {1}", this.ToString(), file));
+          //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} found {1}", this.ToString(), file));
           copies.Add(GetDocumentNode(file));
         }
-        else
-        {
-          Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} skipping {1}", this.ToString(), file));
-        }
+        //else
+        //{
+        //  Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} skipping {1}", this.ToString(), file));
+        //}
       }
 
       copies.Reverse();
@@ -147,6 +153,8 @@ namespace Intel.LocalHistory
     /// </summary>
     public DocumentNode GetDocumentNode(string filePath)
     {
+      Debug.WriteLine("GetDocumentNode(" + filePath + ")");
+
       if (filePath == null) throw new ArgumentNullException("filePath");
       if (!filePath.StartsWith(RepositoryDirectory)) throw new ArgumentException("filePath is outside of the current Repository");
 

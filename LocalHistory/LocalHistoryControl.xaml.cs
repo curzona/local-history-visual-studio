@@ -14,26 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.ComponentModel;
 
 namespace Intel.LocalHistory
 {
   /// <summary>
   /// Interaction logic for MyControl.xaml
   /// </summary>
-  public partial class LocalHistoryControl : UserControl
+  public partial class LocalHistoryControl : UserControl, INotifyPropertyChanged
   {
 
     public ObservableCollection<DocumentNode> DocumentItems { get; set; }
 
+    public bool HasHistory { get { return DocumentItems.Count != 0; } }
+
     public DocumentNode LatestDocument { get; set; }
 
-    public IVsDifferenceService DifferenceService { get; set; }
+    private IVsDifferenceService differenceService;
 
     private IVsWindowFrame differenceFrame;
 
@@ -42,6 +46,12 @@ namespace Intel.LocalHistory
       InitializeComponent();
 
       DocumentItems = new ObservableCollection<DocumentNode>();
+
+      DocumentItems.CollectionChanged += (o, e) =>
+      {
+        OnPropertyChanged("DocumentItems");
+        OnPropertyChanged("HasHistory");
+      };
 
       DocumentListBox.DataContext = this;
     }
@@ -61,10 +71,16 @@ namespace Intel.LocalHistory
       Debug.Assert(node.OriginalPath == LatestDocument.OriginalPath);
 
       // Close the last comparison because we only want 1 open at a time
-      if (differenceFrame != null) differenceFrame.CloseFrame((uint) __FRAMECLOSE.FRAMECLOSE_NoSave);
+      if (differenceFrame != null) differenceFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+
+      // Get the Difference Service we will use to do the comparison
+      if (differenceService == null)
+      {
+        differenceService = (IVsDifferenceService)Package.GetGlobalService(typeof(SVsDifferenceService));
+      }
 
       // Open a comparison between the old file and the current file
-      differenceFrame = DifferenceService.OpenComparisonWindow2(
+      differenceFrame = differenceService.OpenComparisonWindow2(
         node.RepositoryPath, LatestDocument.RepositoryPath,
         node.FileName + " " + node.TimeStamp + " vs  Now",
         node.FileName + " " + node.TimeStamp + " vs  Now",
@@ -73,6 +89,16 @@ namespace Intel.LocalHistory
         node.FileName + " " + node.TimeStamp + " vs  Now",
         null,
         0);
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public void OnPropertyChanged(string propertyName)
+    {
+      if (this.PropertyChanged != null)
+      {
+        this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+      }
     }
   }
 }

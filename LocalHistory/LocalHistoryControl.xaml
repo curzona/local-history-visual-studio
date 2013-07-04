@@ -9,6 +9,8 @@
     Name="LocalHistoryToolWindow">
 
   <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
     <Style x:Key="{x:Type ListBoxItem}" TargetType="ListBoxItem">
       <EventSetter Event="MouseDoubleClick" Handler="MouseDoubleClickHandler" />
       <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -16,8 +18,9 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListBoxItem">
-            <StackPanel Name="Panel" Orientation="Horizontal">
-              <Label Content="{Binding TimeStamp}"
+            <StackPanel Name="Panel" HorizontalAlignment="Stretch" Orientation="Horizontal" >
+              <Label HorizontalAlignment="Stretch"
+                   Content="{Binding TimeStamp}"
                    Foreground="{DynamicResource VsBrush.WindowText}"></Label>
             </StackPanel>
             <ControlTemplate.Triggers>
@@ -49,12 +52,18 @@
   </UserControl.Resources>
 
   <Grid>
+    <Label
+        Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
+        Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+        BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+        Content="No History"></Label>
     <ListBox
-          x:Name="DocumentListBox"
-          Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
-          Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
-          BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}"
-          ItemsSource="{Binding DocumentItems}">
+        x:Name="DocumentListBox"
+        Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
+        Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+        BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+        ItemsSource="{Binding DocumentItems}"
+        Visibility="{Binding HasHistory, Converter={StaticResource BooleanToVisibilityConverter}}">
     </ListBox>
   </Grid>
 </UserControl>

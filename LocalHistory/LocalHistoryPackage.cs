@@ -49,7 +49,7 @@ namespace Intel.LocalHistory
   [ProvideToolWindow(typeof(LocalHistoryToolWindow))]
   [Guid(GuidList.guidLocalHistoryPkgString)]
   [ProvideAutoLoad("f1536ef8-92ec-443c-9ed7-fdadf150da82")]
-  public sealed class LocalHistoryPackage : Package, IVsSolutionEvents
+  public sealed class LocalHistoryPackage : Package, IVsSolutionEvents, IVsSelectionEvents
   {
     private EnvDTE.DTE dte;
     private uint solutionCookie;
@@ -64,8 +64,6 @@ namespace Intel.LocalHistory
       Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
     }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Overridden Package Implementation
     #region Package Members
 
     /// <summary>
@@ -82,12 +80,12 @@ namespace Intel.LocalHistory
       {
         // Create the command for the menu item.
         CommandID menuCommandID = new CommandID(GuidList.guidLocalHistoryCmdSet, (int)PkgCmdIDList.cmdidLocalHistoryMenuItem);
-        MenuCommand menuItem = new MenuCommand(MenuItemCallback, menuCommandID);
+        MenuCommand menuItem = new MenuCommand(ProjectItemContextMenuHandler, menuCommandID);
         mcs.AddCommand(menuItem);
 
         // Create the command for the tool window
         CommandID toolwndCommandID = new CommandID(GuidList.guidLocalHistoryCmdSet, (int)PkgCmdIDList.cmdidLocalHistoryWindow);
-        MenuCommand menuToolWin = new MenuCommand(ShowToolWindow, toolwndCommandID);
+        MenuCommand menuToolWin = new MenuCommand(ToolWindowMenuItemHandler, toolwndCommandID);
         mcs.AddCommand(menuToolWin);
       }
 
@@ -101,44 +99,18 @@ namespace Intel.LocalHistory
     /// See the Initialize method to see how the menu item is associated to this function using
     /// the OleMenuCommandService service and the MenuCommand class.
     /// </summary>
-    private void MenuItemCallback(object sender, EventArgs e)
+    private void ProjectItemContextMenuHandler(object sender, EventArgs e)
     {
-      string projectItem = dte.SelectedItems.Item(1).ProjectItem.FileNames[0];
+      string filePath = dte.SelectedItems.Item(1).ProjectItem.FileNames[0];
 
-      List<DocumentNode> revisions = documentRepository.GetRevisions(projectItem);
-
-      if (revisions.Count == 0)
+      if (!File.Exists(filePath))
       {
-        IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));
-        Guid clsid = Guid.Empty;
-        int result;
-        Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(
-                   0,
-                   ref clsid,
-                   "LocalHistory",
-                   string.Format(CultureInfo.CurrentCulture, "No history found for {0}", projectItem),
-                   string.Empty,
-                   0,
-                   OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                   OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST,
-                   OLEMSGICON.OLEMSGICON_INFO,
-                   0,        // false
-                   out result));
-
         return;
       }
-      // Make sure the tool window is visible to the user
-      ShowToolWindow(null, null);
 
-      LocalHistoryControl control = (LocalHistoryControl)toolWindow.Content;
-      toolWindow.Caption = "Local History - " + Path.GetFileName(projectItem);
+      ShowToolWindow();
 
-      // Remove all revisions from the revision list that belong to the previous document 
-      control.DocumentItems.Clear();
-
-      // Add the project item and its history to the revision list
-      control.LatestDocument = new DocumentNode(projectItem, projectItem, Path.GetFileName(projectItem), DateTime.Now);
-      foreach (DocumentNode revision in revisions) { control.DocumentItems.Add(revision); }
+      UpdateToolWindow(filePath);
     }
 
     /// <summary>
@@ -146,31 +118,9 @@ namespace Intel.LocalHistory
     /// tool window. See the Initialize method to see how the menu item is associated to 
     /// this function using the OleMenuCommandService service and the MenuCommand class.
     /// </summary>
-    private void ShowToolWindow(object sender, EventArgs e)
+    private void ToolWindowMenuItemHandler(object sender, EventArgs e)
     {
-      if (toolWindow == null)
-      {
-        // Get the instance number 0 of this tool window. This window is single instance so this instance
-        // is actually the only one.
-        // The last flag is set to true so that if the tool window does not exists it will be created.
-        toolWindow = this.FindToolWindow(typeof(LocalHistoryToolWindow), 0, true);
-        if ((null == toolWindow) || (null == toolWindow.Frame))
-        {
-          throw new NotSupportedException(Resources.CanNotCreateWindow);
-        }
-
-        // Provide the control with the Visual Studio Difference Service to compare files
-        LocalHistoryControl control = (LocalHistoryControl)toolWindow.Content;
-        control.DifferenceService = (IVsDifferenceService)GetService(typeof(SVsDifferenceService));
-
-        // TODO: remove this
-        // BUG: This will cause a null pointer exception if no solution is open when the user opens the tool window.
-        documentRepository.Control = control;
-      }
-
-      // Make sure the tool window is visible to the user
-      IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
-      Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+      ShowToolWindow();
     }
 
     /// <summary>
@@ -184,24 +134,135 @@ namespace Intel.LocalHistory
       dte = (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE));
       if (dte == null) ErrorHandler.ThrowOnFailure(1);
 
+
       // The solution name can be empty if the user opens a file without opening a solution
       if (dte.Solution != null && dte.Solution.FullName.Length != 0)
       {
-        IVsRunningDocumentTable documentTable = (IVsRunningDocumentTable)Package.GetGlobalService(typeof(SVsRunningDocumentTable));
+        RegisterDocumentListener();
 
-        Debug.WriteLine(dte.Solution.FullName);
+        RegisterSelectionListener();
+      }
 
-        // Create a new document repository for the solution
-        string solutionDirectory = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
-        string repositoryDirectory = System.IO.Path.Combine(solutionDirectory, ".localhistory");
-        documentRepository = new DocumentRepository(solutionDirectory, repositoryDirectory);
-
-        // Create and register a document listener that will handle save events
-        documentListener = new LocalHistoryDocumentListener(documentTable, documentRepository);
-        documentTable.AdviseRunningDocTableEvents(documentListener, out rdtCookie);
+      // Get the instance of the ToolWindow if there is one
+      toolWindow = this.FindToolWindow(typeof(LocalHistoryToolWindow), 0, false);
+      
+      if(toolWindow != null) {
+        // TODO: remove this
+        // BUG: This will cause a null pointer exception if no solution is open when the user opens the tool window.
+        documentRepository.Control = (LocalHistoryControl)toolWindow.Content;
       }
 
       return VSConstants.S_OK;
+    }
+
+    public void RegisterDocumentListener()
+    {
+      IVsRunningDocumentTable documentTable = (IVsRunningDocumentTable)Package.GetGlobalService(typeof(SVsRunningDocumentTable));
+
+      Debug.WriteLine(dte.Solution.FullName);
+
+      // Create a new document repository for the solution
+      string solutionDirectory = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+      string repositoryDirectory = System.IO.Path.Combine(solutionDirectory, ".localhistory");
+      documentRepository = new DocumentRepository(solutionDirectory, repositoryDirectory);
+
+      // Create and register a document listener that will handle save events
+      documentListener = new LocalHistoryDocumentListener(documentTable, documentRepository);
+
+      uint rdtCookie;
+      documentTable.AdviseRunningDocTableEvents(documentListener, out rdtCookie);
+    }
+
+    public void RegisterSelectionListener()
+    {
+      IVsMonitorSelection selectionMonitor = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
+
+      uint eventsCookie;
+      selectionMonitor.AdviseSelectionEvents(this, out eventsCookie);
+    }
+
+    public int OnSelectionChanged(IVsHierarchy pHierOld, uint itemidOld, IVsMultiItemSelect pMISOld, ISelectionContainer pSCOld, IVsHierarchy pHierNew, uint itemidNew, IVsMultiItemSelect pMISNew, ISelectionContainer pSCNew)
+    {
+      // The selected item can be a Solution, Project, meta ProjectItem or file ProjectItem
+
+      // Don't update the tool window if the selection has not changed
+      if (itemidOld == itemidNew)
+      {
+        return VSConstants.E_NOTIMPL;
+      }
+
+      // Don't update the tool window if it doesn't exist
+      if (toolWindow == null)
+      {
+        return VSConstants.E_NOTIMPL;
+      }
+
+      // Don't update the tool window if it isn't visible
+      IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+      if (windowFrame.IsVisible() == VSConstants.S_FALSE)
+      {
+        return VSConstants.E_NOTIMPL;
+      }
+
+      Debug.WriteLine(itemidOld +"->" + itemidNew);
+
+      EnvDTE.SelectedItem si = dte.SelectedItems.Item(1);
+      EnvDTE.ProjectItem item = si.ProjectItem;
+
+      // Solutions and Projects don't have ProjectItems
+      if (item != null && item.FileCount != 0)
+      {
+        string filePath = item.FileNames[0];
+
+        if (File.Exists(filePath))
+        {
+          UpdateToolWindow(filePath);
+        }
+      }
+
+      return VSConstants.E_NOTIMPL;
+    }
+
+    private void ShowToolWindow()
+    {
+      if (toolWindow == null)
+      {
+        // Get the instance number 0 of this tool window. This window is single instance so this instance
+        // is actually the only one.
+        // The last flag is set to true so that if the tool window does not exists it will be created.
+        toolWindow = this.FindToolWindow(typeof(LocalHistoryToolWindow), 0, true);
+        if ((toolWindow == null) || (toolWindow.Frame == null))
+        {
+          throw new NotSupportedException(Resources.CanNotCreateWindow);
+        }
+
+        // Provide the control with the Visual Studio Difference Service to compare files
+        LocalHistoryControl control = (LocalHistoryControl)toolWindow.Content;
+
+        // TODO: remove this
+        // BUG: This will cause a null pointer exception if no solution is open when the user opens the tool window.
+        documentRepository.Control = control;
+      }
+
+      // Make sure the tool window is visible to the user
+      IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+      Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+    }
+
+    public void UpdateToolWindow(string filePath)
+    {
+      List<DocumentNode> revisions = documentRepository.GetRevisions(filePath);
+
+      // Update the tool window
+      LocalHistoryControl control = (LocalHistoryControl)toolWindow.Content;
+      toolWindow.Caption = "Local History - " + Path.GetFileName(filePath);
+
+      // Remove all revisions from the revision list that belong to the previous document 
+      control.DocumentItems.Clear();
+
+      // Add the project item and its history to the revision list
+      control.LatestDocument = new DocumentNode(filePath, filePath, Path.GetFileName(filePath), DateTime.Now);
+      foreach (DocumentNode revision in revisions) { control.DocumentItems.Add(revision); }
     }
 
     #region Unused IVsSolutionEvents
@@ -272,6 +333,20 @@ namespace Intel.LocalHistory
       pfCancel = VSConstants.S_OK;
 
       return VSConstants.S_OK;
+    }
+
+    #endregion
+
+    #region Unused IVsSelectionEvents
+
+    public int OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
+    {
+      return VSConstants.E_NOTIMPL;
+    }
+
+    public int OnElementValueChanged(uint elementid, object varValueOld, object varValueNew)
+    {
+      return VSConstants.E_NOTIMPL;
     }
 
     #endregion
