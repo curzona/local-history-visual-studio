@@ -54,6 +54,7 @@ namespace Intel.LocalHistory
     private EnvDTE.DTE dte;
     private uint solutionCookie;
     private uint rdtCookie;
+    private uint selectionCookie;
     private DocumentRepository documentRepository;
     private LocalHistoryDocumentListener documentListener;
 
@@ -74,6 +75,9 @@ namespace Intel.LocalHistory
       Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
       base.Initialize();
 
+      IVsSolution solution = (IVsSolution)GetService(typeof(SVsSolution));
+      ErrorHandler.ThrowOnFailure(solution.AdviseSolutionEvents(this, out solutionCookie));
+
       // Add our command handlers for menu (commands must exist in the .vsct file)
       OleMenuCommandService mcs = (OleMenuCommandService)GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
       if (null != mcs)
@@ -88,30 +92,8 @@ namespace Intel.LocalHistory
         MenuCommand menuToolWin = new MenuCommand(ToolWindowMenuItemHandler, toolwndCommandID);
         mcs.AddCommand(menuToolWin);
       }
-
-      IVsSolution solution = (IVsSolution)GetService(typeof(SVsSolution));
-      ErrorHandler.ThrowOnFailure(solution.AdviseSolutionEvents(this, out solutionCookie));
     }
     #endregion
-
-    /// <summary>
-    /// This function is the callback used to execute a command when the a menu item is clicked.
-    /// See the Initialize method to see how the menu item is associated to this function using
-    /// the OleMenuCommandService service and the MenuCommand class.
-    /// </summary>
-    private void ProjectItemContextMenuHandler(object sender, EventArgs e)
-    {
-      string filePath = dte.SelectedItems.Item(1).ProjectItem.FileNames[0];
-
-      if (!File.Exists(filePath))
-      {
-        return;
-      }
-
-      ShowToolWindow();
-
-      UpdateToolWindow(filePath);
-    }
 
     /// <summary>
     /// This function is called when the user clicks the menu item that shows the 
@@ -134,7 +116,6 @@ namespace Intel.LocalHistory
       dte = (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE));
       if (dte == null) ErrorHandler.ThrowOnFailure(1);
 
-
       // The solution name can be empty if the user opens a file without opening a solution
       if (dte.Solution != null && dte.Solution.FullName.Length != 0)
       {
@@ -155,6 +136,19 @@ namespace Intel.LocalHistory
       return VSConstants.S_OK;
     }
 
+    /// <summary>
+    /// When a solution is closed, this function creates unsubscribed to documents and selection events.
+    /// </summary>
+    public int OnAfterCloseSolution(
+        Object pUnkReserved)
+    {
+      UnregisterDocumentListener();
+
+      UnregisterSelectionListener();
+
+      return VSConstants.S_OK;
+    }
+
     public void RegisterDocumentListener()
     {
       IVsRunningDocumentTable documentTable = (IVsRunningDocumentTable)Package.GetGlobalService(typeof(SVsRunningDocumentTable));
@@ -169,16 +163,28 @@ namespace Intel.LocalHistory
       // Create and register a document listener that will handle save events
       documentListener = new LocalHistoryDocumentListener(documentTable, documentRepository);
 
-      uint rdtCookie;
       documentTable.AdviseRunningDocTableEvents(documentListener, out rdtCookie);
+    }
+
+    public void UnregisterDocumentListener()
+    {
+      IVsRunningDocumentTable documentTable = (IVsRunningDocumentTable)Package.GetGlobalService(typeof(SVsRunningDocumentTable));
+
+      documentTable.UnadviseRunningDocTableEvents(rdtCookie);
     }
 
     public void RegisterSelectionListener()
     {
       IVsMonitorSelection selectionMonitor = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
 
-      uint eventsCookie;
-      selectionMonitor.AdviseSelectionEvents(this, out eventsCookie);
+      selectionMonitor.AdviseSelectionEvents(this, out selectionCookie);
+    }
+
+    public void UnregisterSelectionListener()
+    {
+      IVsMonitorSelection selectionMonitor = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
+
+      selectionMonitor.UnadviseSelectionEvents(selectionCookie);
     }
 
     public int OnSelectionChanged(IVsHierarchy pHierOld, uint itemidOld, IVsMultiItemSelect pMISOld, ISelectionContainer pSCOld, IVsHierarchy pHierNew, uint itemidNew, IVsMultiItemSelect pMISNew, ISelectionContainer pSCNew)
@@ -214,6 +220,7 @@ namespace Intel.LocalHistory
       {
         string filePath = item.FileNames[0];
 
+        // Only update for project items that exist (Not all of them do).
         if (File.Exists(filePath))
         {
           UpdateToolWindow(filePath);
@@ -221,6 +228,23 @@ namespace Intel.LocalHistory
       }
 
       return VSConstants.E_NOTIMPL;
+    }
+
+    /// <summary>
+    /// This function is the callback used to execute a command when the a menu item is clicked.
+    /// See the Initialize method to see how the menu item is associated to this function using
+    /// the OleMenuCommandService service and the MenuCommand class.
+    /// </summary>
+    private void ProjectItemContextMenuHandler(object sender, EventArgs e)
+    {
+      string filePath = dte.SelectedItems.Item(1).ProjectItem.FileNames[0];
+
+      if (File.Exists(filePath))
+      {
+        ShowToolWindow();
+
+        UpdateToolWindow(filePath);
+      }
     }
 
     private void ShowToolWindow()
@@ -266,12 +290,6 @@ namespace Intel.LocalHistory
     }
 
     #region Unused IVsSolutionEvents
-
-    public int OnAfterCloseSolution(
-        Object pUnkReserved)
-    {
-      return VSConstants.S_OK;
-    }
 
     public int OnAfterLoadProject(
         IVsHierarchy pStubHierarchy,

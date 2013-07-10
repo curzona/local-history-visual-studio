@@ -25,13 +25,13 @@ namespace Intel.LocalHistory
   class DocumentRepository
   {
     // Epoch used for converting to unix time.
-    private static readonly DateTime Epoch = new DateTime(1970, 1, 1);
+    private static readonly DateTime EPOCH = new DateTime(1970, 1, 1);
 
     public string SolutionDirectory { get; set; }
 
     public string RepositoryDirectory { get; set; }
 
-    // TODO: TODO: remove this
+    // TODO: remove this
     public LocalHistoryControl Control { get; set; }
 
     /// <summary>
@@ -71,7 +71,7 @@ namespace Intel.LocalHistory
         // Copy the file to the repository
         File.Copy(filePath, newNode.RepositoryPath, true);
 
-        // TODO: TODO: remove this
+        // TODO: remove this
         if (Control != null && Control.LatestDocument.OriginalPath.Equals(newNode.OriginalPath))
         {
           Control.DocumentItems.Insert(0, newNode);
@@ -97,7 +97,8 @@ namespace Intel.LocalHistory
       string unixTime = ToUnixTime(dateTime).ToString(CultureInfo.CurrentCulture);
       string fileName = Path.GetFileName(filePath);
       string relativePath = filePath.StartsWith(SolutionDirectory) ? filePath.Replace(SolutionDirectory + "\\", "") :
-        Path.Combine(Path.GetPathRoot(filePath).Replace(":\\", ""), filePath.Replace(Path.GetPathRoot(filePath), "")); // If the path is outside the solution directory, we have to mess with the drive letter
+        // If the path is outside the solution directory, we have to mess with the drive letter
+        Path.Combine(Path.GetPathRoot(filePath).Replace(":\\", ""), filePath.Replace(Path.GetPathRoot(filePath), ""));
       string dirPath = Path.GetDirectoryName(relativePath);
       string newPath = Path.Combine(RepositoryDirectory, dirPath, unixTime + "$" + fileName);
 
@@ -117,7 +118,8 @@ namespace Intel.LocalHistory
       if (filePath == null) throw new ArgumentNullException("filePath");
 
       string relativePath = filePath.StartsWith(SolutionDirectory) ? filePath.Replace(SolutionDirectory + "\\", "") :
-        Path.Combine(Path.GetPathRoot(filePath).Replace(":\\", ""), filePath.Replace(Path.GetPathRoot(filePath), "")); // If the path is outside the solution directory, we have to mess with the drive letter
+        // If the path is outside the solution directory, we have to mess with the drive letter
+        Path.Combine(Path.GetPathRoot(filePath).Replace(":\\", ""), filePath.Replace(Path.GetPathRoot(filePath), ""));
       string newPath = Path.Combine(RepositoryDirectory, relativePath);
       string dirPath = Path.GetDirectoryName(newPath);
       string fileName = Path.GetFileName(newPath);
@@ -126,23 +128,27 @@ namespace Intel.LocalHistory
       //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} newPath = {1}", this.ToString(), newPath));
       //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} dirPath = {1}", this.ToString(), dirPath));
 
-      string[] files = Directory.GetFiles(dirPath);
       List<DocumentNode> copies = new List<DocumentNode>();
 
-      foreach (string file in files)
+      if (Directory.Exists(dirPath))
       {
-        if (file.StartsWith(dirPath) && file.EndsWith(fileName))
-        {
-          //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} found {1}", this.ToString(), file));
-          copies.Add(GetDocumentNode(file));
-        }
-        //else
-        //{
-        //  Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} skipping {1}", this.ToString(), file));
-        //}
-      }
+        string[] files = Directory.GetFiles(dirPath);
 
-      copies.Reverse();
+        foreach (string file in files)
+        {
+          if (file.StartsWith(dirPath) && file.EndsWith(fileName))
+          {
+            //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} found {1}", this.ToString(), file));
+            copies.Add(GetDocumentNode(file));
+          }
+          //else
+          //{
+          //  Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "In GetRevisions() of: {0} skipping {1}", this.ToString(), file));
+          //}
+        }
+
+        copies.Reverse();
+      }
 
       return copies;
     }
@@ -184,12 +190,12 @@ namespace Intel.LocalHistory
 
     private DateTime ToDateTime(long unixTime)
     {
-      return Epoch.ToLocalTime().AddSeconds(unixTime);
+      return EPOCH.ToLocalTime().AddSeconds(unixTime);
     }
 
     private long ToUnixTime(DateTime dateTime)
     {
-      return (long)(dateTime - Epoch.ToLocalTime()).TotalSeconds;
+      return (long)(dateTime - EPOCH.ToLocalTime()).TotalSeconds;
     }
   }
 }

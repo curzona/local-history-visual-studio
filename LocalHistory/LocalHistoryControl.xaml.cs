@@ -22,6 +22,7 @@ using System.IO;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.ComponentModel;
+using System;
 
 namespace Intel.LocalHistory
 {
@@ -47,12 +48,14 @@ namespace Intel.LocalHistory
 
       DocumentItems = new ObservableCollection<DocumentNode>();
 
+      // PropertyChanged event propagation
       DocumentItems.CollectionChanged += (o, e) =>
       {
         OnPropertyChanged("DocumentItems");
         OnPropertyChanged("HasHistory");
       };
 
+      // Set the DataContext for binding properties
       DocumentListBox.DataContext = this;
     }
 
