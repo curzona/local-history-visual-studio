@@ -42,6 +42,11 @@ namespace Intel.LocalHistory
       SolutionDirectory = solutionDirectory;
       RepositoryDirectory = repositoryDirectory;
 
+      if (!Directory.Exists(RepositoryDirectory))
+      {
+        Directory.CreateDirectory(RepositoryDirectory);
+      }
+
       File.SetAttributes(RepositoryDirectory, FileAttributes.Hidden);
     }
 
