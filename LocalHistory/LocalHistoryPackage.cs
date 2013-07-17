@@ -146,6 +146,8 @@ namespace Intel.LocalHistory
 
       UnregisterSelectionListener();
 
+      ClearToolWindow();
+
       return VSConstants.S_OK;
     }
 
@@ -224,8 +226,12 @@ namespace Intel.LocalHistory
         if (File.Exists(filePath))
         {
           UpdateToolWindow(filePath);
+
+          return VSConstants.E_NOTIMPL;
         }
       }
+
+      ClearToolWindow();
 
       return VSConstants.E_NOTIMPL;
     }
@@ -244,6 +250,19 @@ namespace Intel.LocalHistory
         ShowToolWindow();
 
         UpdateToolWindow(filePath);
+      }
+    }
+
+    private void ClearToolWindow()
+    {
+      if (toolWindow != null)
+      {
+        // Provide the control with the Visual Studio Difference Service to compare files
+        LocalHistoryControl control = (LocalHistoryControl)toolWindow.Content;
+
+        toolWindow.Caption = "Local History";
+        control.LatestDocument = null;
+        control.DocumentItems.Clear();
       }
     }
 
